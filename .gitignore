@@ -1,0 +1,15 @@
+# 虚拟环境
+.venv/
+venv/
+magetron/
+**/Lib/site-packages/
+__pycache__/
+*.pyc
+.pytest_cache/
+# 大依赖：由用户自己 clone
+Megatron-LM/
+# IDE / 系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
