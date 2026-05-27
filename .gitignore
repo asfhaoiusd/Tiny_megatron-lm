@@ -8,6 +8,20 @@ __pycache__/
 .pytest_cache/
 # 大依赖：由用户自己 clone
 Megatron-LM/
+# 数据集（用 scripts/download_tinystories.py 下载）
+data/tinystories/
+data/**/*.part
+# 预训练实验 checkpoint
+pre_model/gpt2_tokenizer/
+pre_model/moellm_30m/checkpoints/
+pre_model/moellm_30m_*/checkpoints/
+pre_model/**/checkpoints/
+pre_model/moellm_30m/profiler/
+pre_model/moellm_30m/profiler/*.txt
+pre_model/moellm_30m/profiler/*.json
+pre_model/**/profiler/trace.json
+profiler_trace/
+pre_model/moellm_30m/*.pt
 # IDE / 系统
 .idea/
 .vscode/

@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Literal, Optional
+
+AttentionType = Literal["mha", "mqa", "mla"]
 
 
 @dataclass
@@ -13,6 +15,13 @@ class MoELLMConfig:
     n_layers: int = 8
     n_heads: int = 8
     n_kv_heads: Optional[int] = None  # GQA; None means equal to n_heads
+    attention_type: AttentionType = "mha"  # mha/mqa → CausalSelfAttention; mla → MLA
+    # MLA (DeepSeek-V2 style); used when attention_type == "mla"
+    q_lora_rank: int = 128
+    kv_lora_rank: int = 128
+    qk_nope_head_dim: int = 48
+    qk_rope_head_dim: int = 16
+    v_head_dim: int = 64
     d_ff: int = 2048  # expert hidden dim (SwiGLU intermediate)
     max_seq_len: int = 2048
     dropout: float = 0.0

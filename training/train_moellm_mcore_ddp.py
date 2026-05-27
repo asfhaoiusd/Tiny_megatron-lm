@@ -63,8 +63,7 @@ import torch.distributed as dist
 import torch.nn.functional as F
 
 import megatron.core.parallel_state as parallel_state
-from megatron.core.distributed import DistributedDataParallel
-from megatron.core.distributed.distributed_data_parallel_config import DistributedDataParallelConfig
+from megatron.core.distributed import DistributedDataParallel, DistributedDataParallelConfig
 from megatron.core.optimizer import OptimizerConfig, get_megatron_optimizer
 from megatron.core.transformer.transformer_config import TransformerConfig
 

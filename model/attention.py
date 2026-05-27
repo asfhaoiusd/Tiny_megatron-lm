@@ -15,7 +15,10 @@ from .rope import apply_rope, RotaryEmbedding
 
 @functools.lru_cache(maxsize=1)
 def _sdpa_supports_enable_gqa() -> bool:
-    return "enable_gqa" in inspect.signature(F.scaled_dot_product_attention).parameters
+    try:
+        return "enable_gqa" in inspect.signature(F.scaled_dot_product_attention).parameters
+    except (TypeError, ValueError):
+        return False
 
 
 def make_rms_norm(dim: int, eps: float = 1e-6) -> nn.Module:

@@ -1,0 +1,35 @@
+[
+  {
+    "attention_type": "mha",
+    "params": 31216416,
+    "params_m": 31.216,
+    "train_loss": 20.4387,
+    "valid_loss": 6.5714,
+    "ms_per_step": 220.85,
+    "max_steps": 400,
+    "batch_size": 8,
+    "seq_len": 256
+  },
+  {
+    "attention_type": "mqa",
+    "params": 30087456,
+    "params_m": 30.087,
+    "train_loss": 20.1506,
+    "valid_loss": 6.3637,
+    "ms_per_step": 227.84,
+    "max_steps": 400,
+    "batch_size": 8,
+    "seq_len": 256
+  },
+  {
+    "attention_type": "mla",
+    "params": 29825568,
+    "params_m": 29.826,
+    "train_loss": 22.067,
+    "valid_loss": 6.9797,
+    "ms_per_step": 236.73,
+    "max_steps": 400,
+    "batch_size": 8,
+    "seq_len": 256
+  }
+]

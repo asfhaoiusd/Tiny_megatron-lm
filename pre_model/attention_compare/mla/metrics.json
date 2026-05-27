@@ -1,0 +1,11 @@
+{
+  "attention_type": "mla",
+  "params": 29825568,
+  "params_m": 29.826,
+  "train_loss": 22.067,
+  "valid_loss": 6.9797,
+  "ms_per_step": 236.73,
+  "max_steps": 400,
+  "batch_size": 8,
+  "seq_len": 256
+}

@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import torch
 import torch.nn as nn
-
-from .attention import CausalSelfAttention, make_rms_norm
+from .attention import make_rms_norm
+from .attention_factory import build_attention
 from .config import MoELLMConfig
 from .moe import MoE
 
@@ -13,7 +14,7 @@ class DecoderLayer(nn.Module):
     def __init__(self, config: MoELLMConfig) -> None:
         super().__init__()
         self.input_layernorm = make_rms_norm(config.d_model)
-        self.self_attn = CausalSelfAttention(config)
+        self.self_attn = build_attention(config)
         self.post_attention_layernorm = make_rms_norm(config.d_model)
         self.moe = MoE(config)
 
