@@ -1,0 +1,12 @@
+{
+  "attention_type": "mla",
+  "params_m": 29.826,
+  "prefill_len": 256,
+  "decode_tokens": 128,
+  "batch_size": 1,
+  "prefill_ms": 19.915,
+  "decode_ms_per_token": 9.856,
+  "tokens_per_sec_decode": 101.5,
+  "kv_cache_bytes_per_token": 960,
+  "kv_cache_kb_per_token": 0.94
+}

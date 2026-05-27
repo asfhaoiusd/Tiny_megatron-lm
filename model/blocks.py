@@ -61,10 +61,16 @@ class MoELLM(nn.Module):
         position_offset: int | None = None,
         use_cache: bool = False,
     ) -> tuple[torch.Tensor, torch.Tensor, list[tuple[torch.Tensor, torch.Tensor]] | None]:
-        if past_key_values is not None:
-            pos_off = past_key_values[0][0].shape[2] if position_offset is None else position_offset
+        if position_offset is not None:
+            pos_off = position_offset
+        elif past_key_values is not None:
+            past0 = past_key_values[0][0]
+            if self.config.attention_type == "mla":
+                pos_off = past0.shape[1]
+            else:
+                pos_off = past0.shape[2]
         else:
-            pos_off = 0 if position_offset is None else position_offset
+            pos_off = 0
 
         x = self.embed(input_ids)
         total_aux = input_ids.new_zeros(())

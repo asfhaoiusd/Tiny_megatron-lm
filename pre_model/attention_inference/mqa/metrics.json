@@ -1,0 +1,12 @@
+{
+  "attention_type": "mqa",
+  "params_m": 30.087,
+  "prefill_len": 256,
+  "decode_tokens": 128,
+  "batch_size": 1,
+  "prefill_ms": 16.526,
+  "decode_ms_per_token": 8.212,
+  "tokens_per_sec_decode": 121.8,
+  "kv_cache_bytes_per_token": 1344,
+  "kv_cache_kb_per_token": 1.31
+}

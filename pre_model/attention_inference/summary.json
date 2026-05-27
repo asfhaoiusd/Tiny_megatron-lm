@@ -1,0 +1,38 @@
+[
+  {
+    "attention_type": "mha",
+    "params_m": 31.216,
+    "prefill_len": 256,
+    "decode_tokens": 128,
+    "batch_size": 1,
+    "prefill_ms": 12.105,
+    "decode_ms_per_token": 7.832,
+    "tokens_per_sec_decode": 127.7,
+    "kv_cache_bytes_per_token": 8064,
+    "kv_cache_kb_per_token": 7.88
+  },
+  {
+    "attention_type": "mqa",
+    "params_m": 30.087,
+    "prefill_len": 256,
+    "decode_tokens": 128,
+    "batch_size": 1,
+    "prefill_ms": 16.526,
+    "decode_ms_per_token": 8.212,
+    "tokens_per_sec_decode": 121.8,
+    "kv_cache_bytes_per_token": 1344,
+    "kv_cache_kb_per_token": 1.31
+  },
+  {
+    "attention_type": "mla",
+    "params_m": 29.826,
+    "prefill_len": 256,
+    "decode_tokens": 128,
+    "batch_size": 1,
+    "prefill_ms": 19.915,
+    "decode_ms_per_token": 9.856,
+    "tokens_per_sec_decode": 101.5,
+    "kv_cache_bytes_per_token": 960,
+    "kv_cache_kb_per_token": 0.94
+  }
+]
