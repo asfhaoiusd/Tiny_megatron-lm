@@ -2,9 +2,9 @@
   "attention_type": "mqa",
   "params": 30087456,
   "params_m": 30.087,
-  "train_loss": 20.1506,
-  "valid_loss": 6.3637,
-  "ms_per_step": 227.84,
+  "train_loss": 20.6462,
+  "valid_loss": 6.5874,
+  "ms_per_step": 106.44,
   "max_steps": 400,
   "batch_size": 8,
   "seq_len": 256

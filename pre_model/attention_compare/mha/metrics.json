@@ -2,9 +2,9 @@
   "attention_type": "mha",
   "params": 31216416,
   "params_m": 31.216,
-  "train_loss": 20.4387,
-  "valid_loss": 6.5714,
-  "ms_per_step": 220.85,
+  "train_loss": 21.2037,
+  "valid_loss": 6.5809,
+  "ms_per_step": 111.78,
   "max_steps": 400,
   "batch_size": 8,
   "seq_len": 256
