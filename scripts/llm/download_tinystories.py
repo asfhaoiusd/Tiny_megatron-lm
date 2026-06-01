@@ -1,5 +1,5 @@
 """
-下载 TinyStories 文本数据到 ``data/tinystories/``。
+下载 TinyStories 文本数据到 ``data/llm/tinystories/``。
 
 默认从 Hugging Face 镜像站拉取官方 ``TinyStories-train.txt`` / ``TinyStories-valid.txt``，
 适合本仓库 MoELLM 语言建模实验（按行一条故事）。
@@ -30,7 +30,7 @@ _FILES = {
 
 
 def _project_root() -> Path:
-    return Path(__file__).resolve().parents[1]
+    return Path(__file__).resolve().parents[2]
 
 
 def _default_mirror() -> str:
@@ -86,7 +86,7 @@ def _download_file(url: str, dest: Path, *, chunk_size: int = 1 << 20) -> None:
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="下载 TinyStories 到 data/tinystories/")
+    p = argparse.ArgumentParser(description="下载 TinyStories 到 data/llm/tinystories/")
     p.add_argument(
         "--only",
         choices=("train", "valid", "all"),
@@ -102,11 +102,11 @@ def main() -> None:
         "--out-dir",
         type=Path,
         default=None,
-        help="输出目录，默认 <repo>/data/tinystories",
+        help="输出目录，默认 <repo>/data/llm/tinystories",
     )
     args = p.parse_args()
 
-    out_dir = args.out_dir or (_project_root() / "data" / "tinystories")
+    out_dir = args.out_dir or (_project_root() / "data" / "llm" / "tinystories")
     splits = list(_FILES.keys()) if args.only == "all" else [args.only]
 
     print(f"输出目录: {out_dir}")

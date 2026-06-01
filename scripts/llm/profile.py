@@ -3,10 +3,10 @@
 
 在仓库根目录::
 
-    python training/profile_tinystories_30m.py --device cuda
-    python training/profile_tinystories_30m.py --device cuda --warmup 3 --active 10
+    python scripts/llm/profile.py --device cuda
+    python scripts/llm/profile.py --device cuda --warmup 3 --active 10
 
-输出（``pre_model/moellm_30m/profiler/``）::
+输出（``checkpoints/moellm_30m/profiler/``）::
 
   - ``trace.json`` — Chrome trace（chrome://tracing）
   - ``summary.txt`` — Kineto 算子表 + 模块表
@@ -23,7 +23,7 @@ from pathlib import Path
 
 
 def _project_root() -> Path:
-    return Path(__file__).resolve().parents[1]
+    return Path(__file__).resolve().parents[2]
 
 
 def _parse_args() -> argparse.Namespace:
@@ -256,13 +256,13 @@ def main() -> None:
     import torch
     from torch.profiler import ProfilerActivity, profile, schedule
 
-    from model import MoELLM
-    from pre_model.config_30m import MOELLM_30M_CONFIG, count_parameters
-    from pre_model.dataset import TinyStoriesDataLoader
-    from training.device_util import pick_device
+    from llm import MoELLM
+    from data.llm.config_30m import MOELLM_30M_CONFIG, count_parameters
+    from data.llm.dataset import TinyStoriesDataLoader
+    from device_util import pick_device
 
     args = _parse_args()
-    out_dir = args.output_dir or (root / "pre_model" / "moellm_30m")
+    out_dir = args.output_dir or (root / "checkpoints" / "moellm_30m")
     prof_dir = out_dir / "profiler"
     prof_dir.mkdir(parents=True, exist_ok=True)
 

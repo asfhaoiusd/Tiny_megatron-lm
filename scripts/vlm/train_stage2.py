@@ -22,7 +22,7 @@ def _parse_args():
     p = argparse.ArgumentParser(description="VLM Stage 2: LoRA instruction tuning")
     p.add_argument("--data-json", type=Path, action="append", default=[], help="Instruct JSON(s), can repeat")
     p.add_argument("--image-dir", type=Path, default="", help="Base dir for images")
-    p.add_argument("--output-dir", type=Path, default=Path("pre_model/vlm_stage2"))
+    p.add_argument("--output-dir", type=Path, default=Path("checkpoints/vlm_stage2"))
     p.add_argument("--projector-ckpt", type=Path, required=True, help="Path to stage1 projector.pt")
     p.add_argument("--batch-size", type=int, default=32)
     p.add_argument("--max-steps", type=int, default=5000)
@@ -100,7 +100,7 @@ def main():
 
     combined = ConcatDataset(datasets) if len(datasets) > 1 else datasets[0]
 
-    from data.vlm_dataset import collate_vlm_batch
+    from data.vlm.dataset import collate_vlm_batch
 
     loader = DataLoader(
         combined,

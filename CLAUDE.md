@@ -13,38 +13,54 @@ magetron\Scripts\Activate.ps1    # Windows PowerShell
 source magetron/bin/activate     # Linux / WSL2
 ```
 
-Main dependencies: `torch` (2.x, CUDA), `transformers` (GPT-2 tokenizer).
+Main dependencies: `torch` (2.x, CUDA), `transformers`, `peft`, `pillow`.
 
 ## Key commands
 
 ```bash
+# ---- LLM (纯文本) ----
 # Download TinyStories data (~1.8GB)
-python scripts/download_tinystories.py
+python scripts/llm/download_tinystories.py
 
 # Train one attention type (~30M params, single GPU)
-python training/train_tinystories_30m.py --attention-type mla --max-steps 500 --device cuda
-python training/train_tinystories_30m.py --attention-type mha --device cuda
-python training/train_tinystories_30m.py --attention-type mqa --device cuda
+python scripts/llm/train.py --attention-type mla --max-steps 500 --device cuda
+python scripts/llm/train.py --attention-type mha --device cuda
+python scripts/llm/train.py --attention-type mqa --device cuda
 
 # Compare all three attention types (loss + step time)
-python training/compare_attention.py --max-steps 200 --device cuda
+python scripts/llm/compare_attention.py --max-steps 200 --device cuda
 
 # Inference speed benchmark (prefill + decode)
-python training/benchmark_attention_inference.py --device cuda
+python scripts/llm/benchmark_inference.py --device cuda
 
 # Profile training bottlenecks
-python training/profile_tinystories_30m.py --device cuda --warmup 3 --active 10
+python scripts/llm/profile.py --device cuda --warmup 3 --active 10
 
 # Multi-GPU Megatron DDP (Linux only, requires Megatron-LM/ cloned)
-export PYTHONPATH="${PWD}:${PWD}/Megatron-LM:${PYTHONPATH}"
-torchrun --nproc_per_node=2 training/train_moellm_mcore_ddp.py --train-iters 100 --bf16
+bash scripts/llm/run_2gpu.sh --train-iters 100 --bf16
+
+# ---- VLM (多模态) ----
+# Stage 1: Projector alignment
+python scripts/vlm/train_stage1.py --data-json data/llava_pretrain.json --image-dir data/images/
+
+# Stage 2: LoRA instruction tuning
+python scripts/vlm/train_stage2.py --data-json data/llava_instruct.json --projector-ckpt checkpoints/vlm_stage1/final/projector.pt
+
+# Single-image inference
+python scripts/vlm/generate.py --image test.jpg --projector-ckpt checkpoints/vlm_stage2/final/projector.pt
+
+# lmms-eval benchmark
+python scripts/vlm/eval.py --model-path checkpoints/vlm_stage2/final --tasks mmbench,mmstar
+
+# vLLM serve
+bash scripts/vlm/serve.sh --model-path checkpoints/vlm_stage2/final --port 8000
 ```
 
-Smoke-test MLA independently: `python model/MLA.py`
+Smoke-test MLA independently: `python llm/MLA.py`
 
 ## Architecture
 
-`model/` — pure NN modules, no training logic:
+`llm/` — 纯文本 LLM 模块 (pure NN, no training logic):
 - `config.py` — `MoELLMConfig` dataclass with all hyperparams
 - `blocks.py` — `DecoderLayer` (Pre-LN attn + Pre-LN MoE), `MoELLM` (embed → layers → norm → lm_head, weight-tied)
 - `attention.py` — `CausalSelfAttention` with RoPE + PyTorch SDPA, supports MHA/MQA via `n_kv_heads` (GQA)
@@ -57,19 +73,11 @@ Smoke-test MLA independently: `python model/MLA.py`
 - `generation.py` — `greedy_decode` with KV cache
 - `MQA.py` — legacy standalone MQA module, **not used** in training; use `--attention-type mqa` instead
 
-`pre_model/` — experiment presets and data:
-- `config_30m.py` — `make_30m_config(type)` generates ~30M-param configs (GPT-2 vocab 50257); MLA settings hand-tuned to match parameter count
+`data/llm/` — LLM 数据与配置:
+- `config_30m.py` — `make_30m_config(type)` generates ~30M-param configs (GPT-2 vocab 50257)
 - `dataset.py` — streaming TinyStories loader with GPT-2 tokenizer
 
-`training/` — entry-point scripts:
-- `train_tinystories_30m.py` — single-GPU training loop
-- `compare_attention.py` — train MHA/MQA/MLA sequentially, save `summary.json`
-- `benchmark_attention_inference.py` — prefill + decode timing with KV cache
-- `profile_tinystories_30m.py` — CUDA profiler wrapper
-- `train_moellm_mcore_ddp.py` — Megatron-Core DDP wrapper (TP=PP=EP=1, data-parallel only)
-- `device_util.py` — `pick_device("auto"|"cuda"|"cpu")` with RTX 50-series sm_120 detection
-
-`scripts/` — `download_tinystories.py`, `run_train_moellm_2gpu.sh`
+`scripts/llm/` — LLM 脚本: `train.py`, `compare_attention.py`, `benchmark_inference.py`, `profile.py`, `train_ddp.py`, `download_tinystories.py`, `run_2gpu.sh`
 
 ## VLM pipeline (CLIP + Qwen3-1.7B, LLaVA-style)
 
@@ -80,13 +88,14 @@ Smoke-test MLA independently: `python model/MLA.py`
 - `vlm_model.py` — `VLMForConditionalGeneration` (CLIP+Projector+Qwen3, visual token injection)
 - `lora_utils.py` — `apply_lora_to_llm()`, `freeze_component()`, `get_trainable_params()`
 
-`data/vlm_dataset.py` — `LLaVADataset` with Qwen3 chat template formatting
+`data/vlm/` — VLM 数据: `dataset.py` (`LLaVADataset` with Qwen3 chat template)
 
-`training/` VLM scripts — `train_vlm_stage1.py` (projector only), `train_vlm_stage2.py` (LoRA SFT), `generate_vlm.py` (inference)
+`scripts/vlm/` — VLM 全流程: `train_stage1.py`, `train_stage2.py`, `generate.py`, `eval.py`, `convert_to_llava.py`, `serve.sh`
 
-`eval/` VLM scripts — `run_lmms_eval.py` (lmms-eval benchmark runner), `convert_to_llava.py` (→ HF LLaVA format for vLLM)
+`checkpoints/` — 训练输出 (experiment results, model checkpoints)
 
-`serve/convert_and_serve.sh` — one-step convert + vLLM serve on port 8000
+`device_util.py` — `pick_device("auto"|"cuda"|"cpu")` with RTX 50-series sm_120 detection
+`watch_metrics.py` — training metrics parser (scans `checkpoints/` for `metrics.json`)
 
 **Training flow**: Stage 1 (projector alignment, LR=1e-3) → Stage 2 (LoRA SFT, rank=64, LR=2e-5)
 
@@ -111,4 +120,4 @@ logits, aux_loss, past = model(input_ids, attn_mask=None, past_key_values=None, 
 
 ## Multi-GPU limitation
 
-`train_moellm_mcore_ddp.py` only supports TP=PP=EP=1 (pure data parallelism). NCCL required — Windows native multi-GPU NCCL is typically unavailable; use Linux/WSL2.
+`scripts/llm/train_ddp.py` only supports TP=PP=EP=1 (pure data parallelism). NCCL required — Windows native multi-GPU NCCL is typically unavailable; use Linux/WSL2.

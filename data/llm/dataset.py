@@ -11,9 +11,9 @@ from torch.utils.data import IterableDataset
 
 from .config_30m import GPT2_EOS_TOKEN_ID
 
-_PROJECT_ROOT = Path(__file__).resolve().parents[1]
-_DEFAULT_TRAIN = _PROJECT_ROOT / "data" / "tinystories" / "TinyStories-train.txt"
-_DEFAULT_VALID = _PROJECT_ROOT / "data" / "tinystories" / "TinyStories-valid.txt"
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_DEFAULT_TRAIN = _PROJECT_ROOT / "data" / "llm" / "tinystories" / "TinyStories-train.txt"
+_DEFAULT_VALID = _PROJECT_ROOT / "data" / "llm" / "tinystories" / "TinyStories-valid.txt"
 _TOKENIZER_DIR = Path(__file__).resolve().parent / "gpt2_tokenizer"
 
 

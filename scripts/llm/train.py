@@ -3,9 +3,9 @@
 
 在仓库根目录运行::
 
-    python training/train_tinystories_30m.py --max-steps 50
+    python scripts/llm/train.py --max-steps 50
 
-模型与 checkpoint 默认写入 ``pre_model/moellm_30m/``。
+模型与 checkpoint 默认写入 ``checkpoints/moellm_30m/``。
 """
 
 from __future__ import annotations
@@ -18,12 +18,12 @@ from pathlib import Path
 
 
 def _project_root() -> Path:
-    return Path(__file__).resolve().parents[1]
+    return Path(__file__).resolve().parents[2]
 
 
 def _parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="TinyStories + GPT-2 + ~30M MoELLM")
-    p.add_argument("--output-dir", type=Path, default=None, help="默认 pre_model/moellm_30m")
+    p.add_argument("--output-dir", type=Path, default=None, help="默认 checkpoints/moellm_30m")
     p.add_argument("--train-file", type=Path, default=None)
     p.add_argument("--valid-file", type=Path, default=None)
     p.add_argument("--seq-len", type=int, default=256)
@@ -53,10 +53,10 @@ def main() -> None:
     import torch
     import torch.nn.functional as F
 
-    from model import MoELLM
-    from pre_model.config_30m import count_parameters, make_30m_config, preset_dir_for, save_config
-    from pre_model.dataset import TinyStoriesDataLoader
-    from training.device_util import pick_device
+    from llm import MoELLM
+    from data.llm.config_30m import count_parameters, make_30m_config, preset_dir_for, save_config
+    from data.llm.dataset import TinyStoriesDataLoader
+    from device_util import pick_device
 
     args = _parse_args()
     out_dir = args.output_dir or preset_dir_for(args.attention_type)  # type: ignore[arg-type]

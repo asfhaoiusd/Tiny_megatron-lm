@@ -3,8 +3,8 @@
 
 在仓库根目录::
 
-    python training/compare_attention.py --max-steps 50 --device cuda
-    python training/compare_attention.py --attention-types mha mla --max-steps 100
+    python scripts/llm/compare_attention.py --max-steps 50 --device cuda
+    python scripts/llm/compare_attention.py --attention-types mha mla --max-steps 100
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from pathlib import Path
 
 
 def _project_root() -> Path:
-    return Path(__file__).resolve().parents[1]
+    return Path(__file__).resolve().parents[2]
 
 
 def _parse_args() -> argparse.Namespace:
@@ -28,7 +28,7 @@ def _parse_args() -> argparse.Namespace:
         default=["mha", "mqa", "mla"],
         choices=("mha", "mqa", "mla"),
     )
-    p.add_argument("--output-dir", type=Path, default=None, help="默认 pre_model/attention_compare/")
+    p.add_argument("--output-dir", type=Path, default=None, help="默认 checkpoints/attention_compare/")
     p.add_argument("--seq-len", type=int, default=256)
     p.add_argument("--batch-size", type=int, default=8)
     p.add_argument("--max-steps", type=int, default=100)
@@ -54,8 +54,8 @@ def _train_one(
     import torch
     import torch.nn.functional as F
 
-    from model import MoELLM
-    from pre_model.config_30m import count_parameters, make_30m_config, save_config
+    from llm import MoELLM
+    from data.llm.config_30m import count_parameters, make_30m_config, save_config
 
     cfg = make_30m_config(attention_type)  # type: ignore[arg-type]
     run_dir = out_dir / attention_type
@@ -151,11 +151,11 @@ def main() -> None:
 
     import torch
 
-    from pre_model.dataset import TinyStoriesDataLoader
-    from training.device_util import pick_device
+    from data.llm.dataset import TinyStoriesDataLoader
+    from device_util import pick_device
 
     args = _parse_args()
-    out_dir = args.output_dir or (root / "pre_model" / "attention_compare")
+    out_dir = args.output_dir or (root / "checkpoints" / "attention_compare")
     out_dir.mkdir(parents=True, exist_ok=True)
     device = pick_device(args.device)
 

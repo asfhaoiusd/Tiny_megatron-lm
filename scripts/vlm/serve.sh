@@ -1,11 +1,11 @@
 #!/bin/bash
 # Convert trained VLM to LLaVA format and launch vLLM server.
-# Usage: bash serve/convert_and_serve.sh [--port 8000] [--model-path pre_model/vlm_stage2/final]
+# Usage: bash scripts/vlm/serve.sh [--port 8000] [--model-path checkpoints/vlm_stage2/final]
 
 set -euo pipefail
 
 PORT=8000
-MODEL_PATH="pre_model/vlm_stage2/final"
+MODEL_PATH="checkpoints/vlm_stage2/final"
 EXTRA_ARGS=()
 
 while [[ $# -gt 0 ]]; do

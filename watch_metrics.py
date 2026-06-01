@@ -60,9 +60,9 @@ def _find_metrics_files(root: Path) -> list[Path]:
 
 
 def _experiment_name(path: Path) -> str:
-    """Derive experiment name from path. E.g. pre_model/attention_compare/mha → 'attention_compare'."""
+    """Derive experiment name from path. E.g. checkpoints/attention_compare/mha → 'attention_compare'."""
     parts = path.parts
-    # Look for the directory immediately under pre_model/ or similar
+    # Look for the directory immediately under checkpoints/ or similar
     if "attention_compare" in parts:
         return "attention_compare"
     if "attention_inference" in parts:
@@ -158,7 +158,7 @@ def main() -> None:
     p = argparse.ArgumentParser(description="train-watch: monitor LLM training metrics")
     p.add_argument("--summary", type=Path, help="path to summary.json")
     p.add_argument("--metrics", type=Path, action="append", help="path to individual metrics.json")
-    p.add_argument("--scan-dir", type=Path, default=None, help="dir to scan (default: pre_model)")
+    p.add_argument("--scan-dir", type=Path, default=None, help="dir to scan (default: checkpoints)")
     p.add_argument("--alert-loss-above", type=float, default=10.0)
     p.add_argument("--alert-time-above", type=float, default=200.0)
     p.add_argument("--json", action="store_true", help="output as JSON")
@@ -172,7 +172,7 @@ def main() -> None:
         for mp in args.metrics:
             entries.extend(_load_entries(mp))
     if not args.summary and not args.metrics:
-        scan_root = args.scan_dir or (Path(__file__).resolve().parents[1] / "pre_model")
+        scan_root = args.scan_dir or (Path(__file__).resolve().parent / "checkpoints")
         files = _find_metrics_files(scan_root)
         if not files:
             print(f"No metrics.json or summary.json found under {scan_root}")

@@ -7,8 +7,8 @@ from dataclasses import asdict, replace
 from pathlib import Path
 from typing import Literal
 
-from model import MoELLM, MoELLMConfig
-from model.config import AttentionType
+from llm import MoELLM, MoELLMConfig
+from llm.config import AttentionType
 
 # GPT-2 byte-level BPE
 GPT2_VOCAB_SIZE = 50257

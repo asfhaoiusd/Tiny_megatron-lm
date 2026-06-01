@@ -3,10 +3,10 @@
 
 在仓库根目录::
 
-    python training/benchmark_attention_inference.py --device cuda
-    python training/benchmark_attention_inference.py --prefill-len 128 --decode-tokens 64
+    python scripts/llm/benchmark_inference.py --device cuda
+    python scripts/llm/benchmark_inference.py --prefill-len 128 --decode-tokens 64
 
-输出: ``pre_model/attention_inference/summary.json``
+输出: ``checkpoints/attention_inference/summary.json``
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from pathlib import Path
 
 
 def _project_root() -> Path:
-    return Path(__file__).resolve().parents[1]
+    return Path(__file__).resolve().parents[2]
 
 
 def _parse_args() -> argparse.Namespace:
@@ -142,11 +142,11 @@ def _bench_decode(
 def _bench_one(attention_type: str, args: argparse.Namespace, device) -> dict:
     import torch
 
-    from model import MoELLM
-    from pre_model.config_30m import count_parameters, make_30m_config, save_config
+    from llm import MoELLM
+    from data.llm.config_30m import count_parameters, make_30m_config, save_config
 
     cfg = make_30m_config(attention_type)  # type: ignore[arg-type]
-    run_dir = (args.output_dir or (_project_root() / "pre_model" / "attention_inference")) / attention_type
+    run_dir = (args.output_dir or (_project_root() / "checkpoints" / "attention_inference")) / attention_type
     run_dir.mkdir(parents=True, exist_ok=True)
     save_config(cfg, run_dir)
 
@@ -200,10 +200,10 @@ def main() -> None:
 
     import torch
 
-    from training.device_util import pick_device
+    from device_util import pick_device
 
     args = _parse_args()
-    out_dir = args.output_dir or (root / "pre_model" / "attention_inference")
+    out_dir = args.output_dir or (root / "checkpoints" / "attention_inference")
     out_dir.mkdir(parents=True, exist_ok=True)
     device = pick_device(args.device)
 

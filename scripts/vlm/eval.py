@@ -1,7 +1,7 @@
 """VLM evaluation using lmms-eval framework.
 
 Usage:
-    python eval/run_lmms_eval.py --model-path pre_model/vlm_stage2/final --tasks mmbench,mmstar
+    python scripts/vlm/eval.py --model-path checkpoints/vlm_stage2/final --tasks mmbench,mmstar
 
 Requires: pip install lmms-eval
 """

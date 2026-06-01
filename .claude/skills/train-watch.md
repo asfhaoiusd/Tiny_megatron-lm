@@ -11,11 +11,11 @@ description: Monitor and analyze LLM training metrics. Read metrics.json from si
 
 两种输出格式：
 
-1. **单次训练** — `pre_model/moellm_30m_{type}/metrics.json`
+1. **单次训练** — `checkpoints/moellm_30m_{type}/metrics.json`
 ```json
 {"attention_type": "mla", "valid_loss": 6.88, "steps": 500, "params": 29825568}
 ```
-2. **对比训练** — `pre_model/attention_compare/summary.json`（数组，每元素一个 attention_type；同时各子目录下还有逐项 `metrics.json`）
+2. **对比训练** — `checkpoints/attention_compare/summary.json`（数组，每元素一个 attention_type；同时各子目录下还有逐项 `metrics.json`）
 ```json
 [{"attention_type": "mha", "params_m": 31.216, "train_loss": 21.20, "valid_loss": 6.58, "ms_per_step": 111.78, ...}, ...]
 ```
@@ -26,20 +26,20 @@ description: Monitor and analyze LLM training metrics. Read metrics.json from si
 
 ### Step 1 — 定位数据
 
-先确认 `pre_model/` 下哪些子目录存在 `metrics.json`：
+先确认 `checkpoints/` 下哪些子目录存在 `metrics.json`：
 
 ```bash
-find pre_model -name "metrics.json" -o -name "summary.json"
+find checkpoints -name "metrics.json" -o -name "summary.json"
 ```
 
 ### Step 2 — 运行分析脚本
 
 ```bash
-python scripts/watch_metrics.py
+python watch_metrics.py
 ```
 
 此脚本参数：
-- `--summary`：指定 summary.json 路径（默认 `pre_model/attention_compare/summary.json`）
+- `--summary`：指定 summary.json 路径（默认 `checkpoints/attention_compare/summary.json`）
 - `--metrics`：指定单个 metrics.json 路径（可多次传入）
 - `--compare`：同时传入多次训练的结果，做跨实验对比
 - `--alert-loss-above`：valid_loss 高于此值标红（默认 10.0）
@@ -70,7 +70,7 @@ python scripts/watch_metrics.py
 ## 使用示例
 
 ```
-/train-watch                          → 全量扫描 pre_model/ 下所有 metrics
+/train-watch                          → 全量扫描 checkpoints/ 下所有 metrics
 /train-watch --compare mha mla        → 只对比 mha 和 mla
 /train-watch --alert-loss-above 8.0   → 更严格的 loss 告警阈值
 ```

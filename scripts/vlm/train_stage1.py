@@ -22,7 +22,7 @@ def _parse_args():
     p = argparse.ArgumentParser(description="VLM Stage 1: Projector alignment")
     p.add_argument("--data-json", type=Path, required=True, help="LLaVA-Pretrain JSON")
     p.add_argument("--image-dir", type=Path, default="", help="Base dir for images")
-    p.add_argument("--output-dir", type=Path, default=Path("pre_model/vlm_stage1"))
+    p.add_argument("--output-dir", type=Path, default=Path("checkpoints/vlm_stage1"))
     p.add_argument("--batch-size", type=int, default=64)
     p.add_argument("--max-steps", type=int, default=5000)
     p.add_argument("--lr", type=float, default=1e-3)
@@ -71,7 +71,7 @@ def main():
 
     # --- Setup data ---
     print("\n[2/4] Loading data...")
-    from data.vlm_dataset import create_dataloader
+    from data.vlm.dataset import create_dataloader
 
     loader = create_dataloader(
         json_path=args.data_json,

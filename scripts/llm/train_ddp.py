@@ -23,10 +23,10 @@ Megatron-LM 自带的 ``GPTModel`` 等实现。
 运行示例（Linux + CUDA + NCCL，在 ``magetronLM`` 仓库根目录）::
 
     # 双卡纯数据并行
-    torchrun --nproc_per_node=2 training/train_moellm_mcore_ddp.py --train-iters 100
+    torchrun --nproc_per_node=2 scripts/llm/train_ddp.py --train-iters 100
 
     # 四卡：TP=2 + DP=2（需模型支持 TP；当前 MoELLM 会报错，仅作参数示例）
-    torchrun --nproc_per_node=4 training/train_moellm_mcore_ddp.py \\
+    torchrun --nproc_per_node=4 scripts/llm/train_ddp.py \\
         --tensor-model-parallel-size 2 --pipeline-model-parallel-size 1
 
 Windows 原生上 NCCL 多卡通常不可用；请使用 **WSL2 / Linux**。
@@ -44,7 +44,7 @@ from pathlib import Path
 def _ensure_paths() -> Path:
     """Megatron-LM 源码根目录与项目根目录加入 ``sys.path``。"""
     here = Path(__file__).resolve()
-    project_root = here.parents[1]
+    project_root = here.parents[2]
     megatron_lm_root = project_root / "Megatron-LM"
     if not megatron_lm_root.is_dir():
         raise RuntimeError(
@@ -67,7 +67,7 @@ from megatron.core.distributed import DistributedDataParallel, DistributedDataPa
 from megatron.core.optimizer import OptimizerConfig, get_megatron_optimizer
 from megatron.core.transformer.transformer_config import TransformerConfig
 
-from model import MoELLM, MoELLMConfig
+from llm import MoELLM, MoELLMConfig
 
 
 def _parse_args() -> argparse.Namespace:
@@ -256,7 +256,7 @@ if __name__ == "__main__":
     if int(os.environ.get("WORLD_SIZE", "1")) < 2:
         print(
             "提示: WORLD_SIZE<2 时以单进程运行；双卡请使用:\n"
-            "  torchrun --nproc_per_node=2 training/train_moellm_mcore_ddp.py",
+            "  torchrun --nproc_per_node=2 scripts/llm/train_ddp.py",
             file=sys.stderr,
         )
     main()
