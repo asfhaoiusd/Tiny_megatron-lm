@@ -171,6 +171,7 @@ def _smoke_test() -> None:
     y, cache = mla(x, use_cache=True)
     assert y.shape == x.shape and cache is not None
     c, k_pe = cache
+    
     assert c.shape == (2, 16, cfg.kv_lora_rank)
     assert k_pe.shape == (2, 16, cfg.qk_rope_head_dim)
 

@@ -1,6 +1,6 @@
 # magetronLM
 
-基于 **PyTorch** 的 Decoder-only **大语言模型**参考实现，带 **Mixture-of-Experts (MoE)** 前馈层；支持 **MHA / MQA / MLA** 三种注意力对比实验（训练 loss、训练速度、推理 prefill/decode），以及可选接入 **Megatron-LM / Megatron-Core** 做多卡分布式训练。
+基于 **PyTorch** 的 Decoder-only **大语言模型**参考实现，带 **Mixture-of-Experts (MoE)** 前馈层；支持 **MHA / MQA / MLA** 三种注意力对比实验（训练 loss、训练速度、推理 prefill/decode），以及可选接入 **Megatron-LM / Megatron-Core** 做多卡分布式训练。新增 **VLM 多模态管道**（CLIP ViT-L/14@336 + Qwen3-1.7B，LLaVA 架构），支持两阶段微调、lmms-eval 评测、vLLM 推理部署。
 
 **仓库地址**：[https://github.com/asfhaoiusd/Tiny_megatron-lm](https://github.com/asfhaoiusd/Tiny_megatron-lm)
 
@@ -11,9 +11,13 @@
 | 模块 | 说明 |
 |------|------|
 | **模型** (`model/`) | Pre-LN、RoPE、**MHA / MQA / MLA**（`attention_type` 切换）、SDPA、Top-k MoE（SwiGLU + router aux）、Embedding / `lm_head` 权重共享、`greedy_decode` |
+| **VLM 多模态** (`vlm/`) | **CLIP ViT-L/14@336** (冻结) + 2层 MLP Projector + **Qwen3-1.7B** (LoRA)，LaVA 风格 visual token 注入 |
 | **预训练实验** (`pre_model/`) | ~30M 配置（GPT-2 词表 50257）、TinyStories 数据、checkpoint / metrics |
-| **训练** (`training/`) | 单卡训练、注意力对比、**推理测速**、Profiler、Megatron DDP |
-| **脚本** (`scripts/`) | 数据下载、双卡 `torchrun` 示例 |
+| **训练** (`training/`) | 单卡训练、注意力对比、**推理测速**、Profiler、Megatron DDP → 含 VLM 两阶段训练 |
+| **数据** (`data/`) | TinyStories 语料加载、VLM 图文数据集（LLaVA 对话格式） |
+| **评测** (`eval/`) | lmms-eval 多模态评测（MMBench, MMStar, TextVQA 等） + vLLM 格式转换 |
+| **脚本** (`scripts/`) | 数据下载、双卡 `torchrun` 示例；VLM 一键转换+部署 |
+| **技能** (`.claude/skills/`) | `train-watch` 训练指标监控、`karpathy-guidelines` 编码规范 |
 
 ### 注意力类型
 
@@ -45,9 +49,12 @@ tinystories  compare_attention   inference
 
 - **Python** 3.10+
 - **PyTorch** 2.x（GPU 训练需 CUDA 构建）
-- **transformers**（GPT-2 分词器）
+- **transformers**（GPT-2 分词器 / CLIP / Qwen3）
+- **peft**（LoRA）、**PIL / Pillow**（图像加载）
+- **lmms-eval**（VLM 评测）、**vLLM**（VLM 推理部署）
 - 多卡 Megatron：**NCCL**；Windows 原生多卡 NCCL 通常不可用，建议在 **Linux / WSL2** 使用 `torchrun`
 - Megatron 脚本：将 [NVIDIA/Megatron-LM](https://github.com/NVIDIA/Megatron-LM) 置于仓库内 `Megatron-LM/` 目录
+- VLM 训练建议 **A100-40G**（Stage 1 ~28GB, Stage 2 ~35GB VRAM）
 
 ## 安装
 
@@ -59,8 +66,11 @@ python -m venv magetron
 # Windows: magetron\Scripts\activate
 # Linux:   source magetron/bin/activate
 
-pip install torch transformers
+pip install torch transformers peft pillow
 # CUDA 请按官方选择版本；新显卡（如 RTX 50 系）可能需要较新 cu128 nightly
+
+# VLM 评测与部署（可选）
+pip install lmms-eval vllm
 
 # （可选）Megatron-LM
 git clone https://github.com/NVIDIA/Megatron-LM.git Megatron-LM
@@ -73,26 +83,117 @@ cd Megatron-LM && pip install -e . && cd ..
 
 ```
 magetronLM/
-├── model/
-│   ├── attention.py              # CausalSelfAttention（MHA/MQA）
-│   ├── attention_factory.py      # 按 attention_type 构建
-│   ├── MLA.py                    # MLA + latent KV cache
-│   ├── blocks.py                 # MoELLM / DecoderLayer
-│   └── generation.py             # greedy_decode
+├── model/                         # LLM 核心模块（纯 NN）
+│   ├── attention.py               # CausalSelfAttention（MHA/MQA）
+│   ├── attention_factory.py       # 按 attention_type 构建
+│   ├── MLA.py                     # MLA + latent KV cache
+│   ├── blocks.py                  # MoELLM / DecoderLayer
+│   └── generation.py              # greedy_decode
+├── vlm/                           # VLM 多模态模块
+│   ├── config.py                  # VLMConfig
+│   ├── vision_encoder.py          # CLIP ViT 封装
+│   ├── projector.py               # 2层 MLP Projector
+│   ├── vlm_model.py               # VLMForConditionalGeneration
+│   └── lora_utils.py              # LoRA / 冻结 / 参数统计
 ├── pre_model/
-│   ├── config_30m.py             # make_30m_config(mha|mqa|mla)
+│   ├── config_30m.py              # make_30m_config(mha|mqa|mla)
 │   ├── dataset.py
-│   ├── attention_compare/        # 训练对比结果
-│   └── attention_inference/    # 推理测速结果
-├── training/
+│   ├── attention_compare/         # 训练对比结果
+│   └── attention_inference/       # 推理测速结果
+├── data/                          # 数据集
+│   ├── tinystories/               # TinyStories 语料
+│   └── vlm_dataset.py             # LLaVA 对话数据集
+├── training/                      # 训练 / 推理脚本
 │   ├── train_tinystories_30m.py
 │   ├── compare_attention.py
 │   ├── benchmark_attention_inference.py
 │   ├── profile_tinystories_30m.py
-│   └── train_moellm_mcore_ddp.py
-├── data/tinystories/             # 下载后语料（.gitignore）
-├── scripts/
+│   ├── train_moellm_mcore_ddp.py
+│   ├── train_vlm_stage1.py        # VLM Stage 1: Projector 对齐
+│   ├── train_vlm_stage2.py        # VLM Stage 2: LoRA SFT
+│   └── generate_vlm.py            # VLM 单张推理
+├── eval/                          # 评测
+│   ├── run_lmms_eval.py           # lmms-eval 多模态评测
+│   └── convert_to_llava.py        # → HF LLaVA 格式 (vLLM)
+├── serve/
+│   └── convert_and_serve.sh       # 一键转换 + vLLM 部署
+├── scripts/                       # 辅助脚本
+├── CLAUDE.md                      # Claude Code 项目指引
 └── README.md
+```
+
+## VLM 多模态管道（CLIP + Qwen3-1.7B）
+
+```
+Image (336×336)
+    │
+CLIP ViT-L/14@336 (300M, 冻结)
+    │  [576 patches × 1024-dim]
+2层 MLP Projector (~30M, 可训)
+    │  [576 × 2048-dim]
+Qwen3-1.7B (1.7B, LoRA rank=64)
+    │
+    └──→ Text Output
+```
+
+| 组件 | 模型 | 参数量 | 状态 |
+|------|------|--------|------|
+| Vision | `openai/clip-vit-large-patch14-336` | 300M | 冻结 |
+| Projector | 2层 MLP (1024→2048→2048) | ~30M | 可训 |
+| LLM | `Qwen/Qwen3-1.7B` | 1.7B | LoRA (rank=64) |
+| **总计** | | **~2B** | 实际可训 ~60M |
+
+### 训练流程
+
+```bash
+# Stage 1: 模态对齐（只训 Projector）
+python training/train_vlm_stage1.py \
+    --data-json data/llava_pretrain.json \
+    --image-dir data/images/ \
+    --batch-size 64 \
+    --max-steps 5000 \
+    --lr 1e-3
+
+# Stage 2: LoRA 指令微调（Projector + LoRA）
+python training/train_vlm_stage2.py \
+    --data-json data/llava_instruct.json \
+    --image-dir data/images/ \
+    --projector-ckpt pre_model/vlm_stage1/final/projector.pt \
+    --batch-size 32 \
+    --max-steps 5000 \
+    --lr 2e-5
+```
+
+### 单张推理
+
+```bash
+python training/generate_vlm.py \
+    --image test.jpg \
+    --prompt "请详细描述这张图片" \
+    --projector-ckpt pre_model/vlm_stage2/final/projector.pt \
+    --lora-path pre_model/vlm_stage2/final/lora
+```
+
+### lmms-eval 评测
+
+```bash
+python eval/run_lmms_eval.py \
+    --model-path pre_model/vlm_stage2/final \
+    --tasks mmbench,mmstar,textvqa,mme
+```
+
+### vLLM 部署
+
+```bash
+# 一键：转 HF LLaVA 格式 + 启动 vLLM 服务
+bash serve/convert_and_serve.sh \
+    --model-path pre_model/vlm_stage2/final \
+    --port 8000
+
+# 测试 API
+curl http://localhost:8000/v1/chat/completions \
+    -H "Content-Type: application/json" \
+    -d '{"model": "hf_llava", "messages": [{"role": "user", "content": "描述这张图片"}]}'
 ```
 
 ## TinyStories ~30M 实验（单卡）
@@ -216,7 +317,12 @@ bash scripts/run_train_moellm_2gpu.sh --train-iters 100 --bf16
 
 ## 参考链接
 
+- [Qwen3](https://huggingface.co/Qwen/Qwen3-1.7B) — 阿里开源 LLM，Apache 2.0
+- [LLaVA](https://llava-vl.github.io/) — Large Language and Vision Assistant
 - [DeepSeek-V2（MLA）](https://arxiv.org/abs/2405.04434)
+- [nanoVLM](https://github.com/huggingface/nanoVLM) — VLM 代码参考
+- [vLLM](https://github.com/vllm-project/vllm) — 高性能 LLM 推理引擎
+- [lmms-eval](https://github.com/EvolvingLMMs-Lab/lmms-eval) — 多模态评测框架
 - [Megatron Core Developer Guide](https://docs.nvidia.com/megatron-core/developer-guide/latest/index.html)
 - [Megatron-LM](https://github.com/NVIDIA/Megatron-LM)
 

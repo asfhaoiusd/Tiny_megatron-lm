@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-magetronLM — PyTorch Decoder-only LLM with MoE FFN + MHA/MQA/MLA attention comparison. Companion Megatron-LM directory provides optional multi-GPU DDP via Megatron-Core.
+magetronLM — PyTorch Decoder-only LLM with MoE FFN + MHA/MQA/MLA attention comparison. Also includes a ~2B VLM pipeline (CLIP ViT-L/14@336 + Qwen3-1.7B, LLaVA-style). Companion Megatron-LM directory provides optional multi-GPU DDP via Megatron-Core.
 
 ## Virtual environment
 
@@ -70,6 +70,27 @@ Smoke-test MLA independently: `python model/MLA.py`
 - `device_util.py` — `pick_device("auto"|"cuda"|"cpu")` with RTX 50-series sm_120 detection
 
 `scripts/` — `download_tinystories.py`, `run_train_moellm_2gpu.sh`
+
+## VLM pipeline (CLIP + Qwen3-1.7B, LLaVA-style)
+
+`vlm/` — VLM core modules:
+- `config.py` — `VLMConfig` dataclass (vision: CLIP ViT-L/14@336, LLM: Qwen3-1.7B)
+- `vision_encoder.py` — CLIP wrapper, frozen, outputs (B, 576, 1024)
+- `projector.py` — 2-layer MLP (1024→2048→2048, ~30M params)
+- `vlm_model.py` — `VLMForConditionalGeneration` (CLIP+Projector+Qwen3, visual token injection)
+- `lora_utils.py` — `apply_lora_to_llm()`, `freeze_component()`, `get_trainable_params()`
+
+`data/vlm_dataset.py` — `LLaVADataset` with Qwen3 chat template formatting
+
+`training/` VLM scripts — `train_vlm_stage1.py` (projector only), `train_vlm_stage2.py` (LoRA SFT), `generate_vlm.py` (inference)
+
+`eval/` VLM scripts — `run_lmms_eval.py` (lmms-eval benchmark runner), `convert_to_llava.py` (→ HF LLaVA format for vLLM)
+
+`serve/convert_and_serve.sh` — one-step convert + vLLM serve on port 8000
+
+**Training flow**: Stage 1 (projector alignment, LR=1e-3) → Stage 2 (LoRA SFT, rank=64, LR=2e-5)
+
+**vLLM serving**: Convert to HF LLaVA format, then `vllm serve --trust-remote-code`
 
 ## Attention type comparison
 
